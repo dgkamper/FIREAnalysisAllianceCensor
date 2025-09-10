@@ -131,7 +131,7 @@ Foundation for Individual Rights in Education. (2024). Campus Speech Survey Data
 
 ## Contact
 
-For questions about this analysis or requests for additional information, please contact David G. Kamper at [email address].
+For questions about this analysis or requests for additional information, please contact David G. Kamper at [davidgkamper@ucla.edu].
 
 ## License
 
