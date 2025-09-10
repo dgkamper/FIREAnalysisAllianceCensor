@@ -59,7 +59,7 @@ Contains supplementary materials including:
 
 ### Paper Results
 
-All results are analyzed and visualized in `Code/R/FireAnalysis_Final.Rmd`. All findings are included in the document. The knitted document can be viewed at [`Code/R/FireAnalysis_Final.html`](https://dgk-law-and-cognition-lab.github.io/FIREAnalysisAllianceandSelfCensor/Code/R/FireAnalysis_Final.html).
+All results are analyzed and visualized in `Code/R/FireAnalysis_Final.Rmd`. All findings are included in the document. The knitted document can be viewed at [`Code/R/FireAnalysis_Final.html`](https://dgk-law-and-cognition-lab.github.io/FIREAnalysisAllianceCensor/Code/R/FireAnalysis_Final.html).
 
 ## Key Findings
 
