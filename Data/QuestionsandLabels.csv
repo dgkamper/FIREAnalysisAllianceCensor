@@ -1,0 +1,102 @@
+﻿idhash,Response ID
+weight,NA
+schooluniverse,NA
+schoolweight,NA
+submitted_at,Recorded Date
+ipedsid,institution_unitid
+school,institution_institutionName
+insttype,institution_sectorOfInstitution
+state,institution_fipsStateCode
+age,demographics_age
+financialaid,demographics_financialAid
+gender,demographics_gender
+geography,demographics_geography
+highschool,demographics_highschool
+major1,demographics_major_one
+sexorientation,demographics_orientation
+partyid,demographics_politicalLeaning
+religion,demographics_religion
+ses,demographics_socioeconomicStatus
+regvoter,demographics_voterRegistration
+gradyear,demographics_year
+race,demographics_raceGrouped
+ideo,demographics_politicalIdeology
+beforeencampments,NA
+adminclear,How clear is it to you that your college's administration protects free speech on campus?
+admincontr,"If a controversy over offensive speech were to occur on your campus, how likely is it that your college's administration would defend the speaker's right to express their views?"
+pubprof,How comfortable would you feel doing the following on your campus? Publicly disagreeing with a professor about a controversial political topic.
+wrtprof,How comfortable would you feel doing the following on your campus? Expressing disagreement with one of your professors about a controversial political topic in a written assignment.
+inclass,How comfortable would you feel doing the following on your campus? Expressing your views on a controversial political topic during an in-class discussion.
+quad,"How comfortable would you feel doing the following on your campus? Expressing your views on a controversial political topic to other students during a discussion in a common campus space such as a quad, dining hall, or lounge."
+socmedia,How comfortable would you feel doing the following on your campus? Expressing an unpopular political opinion to your fellow students on a social media account tied to your name.
+selfcensor,"On your campus, how often have you felt that you could not express your opinion on a subject because of how other students, a professor, or the administration would respond?"
+scstdnts,How often do you self-censor during conversations with other students on campus?
+scprofs,How often do you self-censor during conversations with your professors?
+scclass,How often do you self-censor during classroom discussions?
+shoutdown,How acceptable would you say it is for students to engage in the following action to protest a campus speaker?
+block,How acceptable would you say it is for students to engage in the following action to protest a campus speaker?
+violence,How acceptable would you say it is for students to engage in the following action to protest a campus speaker?
+spktrans,"Regardless of your own views on the topic, should your school ALLOW or NOT ALLOW a speaker on campus who has previously expressed the following idea?"
+spkabortion,"Regardless of your own views on the topic, should your school ALLOW or NOT ALLOW a speaker on campus who has previously expressed the following idea?"
+spkblm,"Regardless of your own views on the topic, should your school ALLOW or NOT ALLOW a speaker on campus who has previously expressed the following idea?"
+spkchurch,"Regardless of your own views on the topic, should your school ALLOW or NOT ALLOW a speaker on campus who has previously expressed the following idea?"
+spkpolice,"Regardless of your own views on the topic, should your school ALLOW or NOT ALLOW a speaker on campus who has previously expressed the following idea?"
+spkchildren,"Regardless of your own views on the topic, should your school ALLOW or NOT ALLOW a speaker on campus who has previously expressed the following idea?"
+spkgaza,"Regardless of your own views on the topic, should your school ALLOW or NOT ALLOW a speaker on campus who has previously expressed the following idea?"
+spkpalestine,"Regardless of your own views on the topic, should your school ALLOW or NOT ALLOW a speaker on campus who has previously expressed the following idea?"
+abortion,"Some students say it can be difficult to have conversations about certain issues on campus. Which of the following issues, if any, would you say are difficult to have an open and honest conversation about on your campus? (select all that apply) - Abortion"
+affirmact,"Some students say it can be difficult to have conversations about certain issues on campus. Which of the following issues, if any, would you say are difficult to have an open and honest conversation about on your campus? (select all that apply) - Affirmative action"
+china,"Some students say it can be difficult to have conversations about certain issues on campus. Which of the following issues, if any, would you say are difficult to have an open and honest conversation about on your campus? (select all that apply) - China"
+climate,"Some students say it can be difficult to have conversations about certain issues on campus. Which of the following issues, if any, would you say are difficult to have an open and honest conversation about on your campus? (select all that apply) - Climate change"
+crime,"Some students say it can be difficult to have conversations about certain issues on campus. Which of the following issues, if any, would you say are difficult to have an open and honest conversation about on your campus? (select all that apply) - Crime"
+econineq,"Some students say it can be difficult to have conversations about certain issues on campus. Which of the following issues, if any, would you say are difficult to have an open and honest conversation about on your campus? (select all that apply) - Economic inequality"
+freespeech,"Some students say it can be difficult to have conversations about certain issues on campus. Which of the following issues, if any, would you say are difficult to have an open and honest conversation about on your campus? (select all that apply) - Freedom of speech"
+gayrights,"Some students say it can be difficult to have conversations about certain issues on campus. Which of the following issues, if any, would you say are difficult to have an open and honest conversation about on your campus? (select all that apply) - Gay rights"
+genderineq,"Some students say it can be difficult to have conversations about certain issues on campus. Which of the following issues, if any, would you say are difficult to have an open and honest conversation about on your campus? (select all that apply) - Gender inequality"
+gunctrl,"Some students say it can be difficult to have conversations about certain issues on campus. Which of the following issues, if any, would you say are difficult to have an open and honest conversation about on your campus? (select all that apply) - Gun control"
+hatespeech,"Some students say it can be difficult to have conversations about certain issues on campus. Which of the following issues, if any, would you say are difficult to have an open and honest conversation about on your campus? (select all that apply) - Hate speech"
+immigration,"Some students say it can be difficult to have conversations about certain issues on campus. Which of the following issues, if any, would you say are difficult to have an open and honest conversation about on your campus? (select all that apply) - Immigration"
+ipc,"Some students say it can be difficult to have conversations about certain issues on campus. Which of the following issues, if any, would you say are difficult to have an open and honest conversation about on your campus? (select all that apply) - The Israeli/Palestinian conflict"
+election,"Some students say it can be difficult to have conversations about certain issues on campus. Which of the following issues, if any, would you say are difficult to have an open and honest conversation about on your campus? (select all that apply) - The Presidential Election"
+police,"Some students say it can be difficult to have conversations about certain issues on campus. Which of the following issues, if any, would you say are difficult to have an open and honest conversation about on your campus? (select all that apply) - Police misconduct"
+raceineq,"Some students say it can be difficult to have conversations about certain issues on campus. Which of the following issues, if any, would you say are difficult to have an open and honest conversation about on your campus? (select all that apply) - Racial inequality"
+relig,"Some students say it can be difficult to have conversations about certain issues on campus. Which of the following issues, if any, would you say are difficult to have an open and honest conversation about on your campus? (select all that apply) - Religion"
+sexasslt,"Some students say it can be difficult to have conversations about certain issues on campus. Which of the following issues, if any, would you say are difficult to have an open and honest conversation about on your campus? (select all that apply) - Sexual assault"
+supreme,"Some students say it can be difficult to have conversations about certain issues on campus. Which of the following issues, if any, would you say are difficult to have an open and honest conversation about on your campus? (select all that apply) - The Supreme Court"
+transrights,"Some students say it can be difficult to have conversations about certain issues on campus. Which of the following issues, if any, would you say are difficult to have an open and honest conversation about on your campus? (select all that apply) - Transgender rights"
+none1,"Some students say it can be difficult to have conversations about certain issues on campus. Which of the following issues, if any, would you say are difficult to have an open and honest conversation about on your campus? (select all that apply) - None of the above"
+asiangrps,Which of the following groups on your campus should be able to register as student organizations and receive student activity fees? (select all that apply) - Asian student groups
+blkgrps,Which of the following groups on your campus should be able to register as student organizations and receive student activity fees? (select all that apply) - Black or African American student groups
+hispgrps,Which of the following groups on your campus should be able to register as student organizations and receive student activity fees? (select all that apply) - Hispanic/Latino student groups
+greekgrps,Which of the following groups on your campus should be able to register as student organizations and receive student activity fees? (select all that apply) - Sororities or fraternities
+lgbtqgrps,Which of the following groups on your campus should be able to register as student organizations and receive student activity fees? (select all that apply) - LGBTQ+ student groups
+christgrps,Which of the following groups on your campus should be able to register as student organizations and receive student activity fees? (select all that apply) - Christian student groups
+jewgrps,Which of the following groups on your campus should be able to register as student organizations and receive student activity fees? (select all that apply) - Jewish student groups
+islamgrps,Which of the following groups on your campus should be able to register as student organizations and receive student activity fees? (select all that apply) - Muslim/Islamic student groups
+hindugrps,Which of the following groups on your campus should be able to register as student organizations and receive student activity fees? (select all that apply) - Hindu student groups
+atheistgrps,Which of the following groups on your campus should be able to register as student organizations and receive student activity fees? (select all that apply) - Atheist/agnostic/secular student groups
+gopgrps,Which of the following groups on your campus should be able to register as student organizations and receive student activity fees? (select all that apply) - Republican student groups
+demgrps,Which of the following groups on your campus should be able to register as student organizations and receive student activity fees? (select all that apply) - Democratic student groups
+consgrps,Which of the following groups on your campus should be able to register as student organizations and receive student activity fees? (select all that apply) - Politically conservative student groups
+libgrps,Which of the following groups on your campus should be able to register as student organizations and receive student activity fees? (select all that apply) - Politically liberal student groups
+blmgrps,Which of the following groups on your campus should be able to register as student organizations and receive student activity fees? (select all that apply) - Black Lives Matter student groups
+israelgrps,Which of the following groups on your campus should be able to register as student organizations and receive student activity fees? (select all that apply) - Pro-Israeli student groups
+palestinegrps,Which of the following groups on your campus should be able to register as student organizations and receive student activity fees? (select all that apply) - Pro-Palestinian student groups
+othergrps,Which of the following groups on your campus should be able to register as student organizations and receive student activity fees? (select all that apply) - Other student groups
+none2,Which of the following groups on your campus should be able to register as student organizations and receive student activity fees? (select all that apply) - None of the above
+anxious,How often would you say that you feel anxious?
+lonely,How often would you say that you feel lonely or isolated?
+notime,How often would you say that you feel like you have no time for yourself?
+depressed,How often would you say that you feel depressed?
+stressed,"How often would you say that you feel stressed, frustrated, or overwhelmed?"
+scgrade,"How often, if at all, do you hide your political beliefs from your professors in an attempt to get a better grade?"
+cancel,"Have you ever been involved in publicly calling out, punishing, or canceling someone or a group for inappropriate statements or actions?"
+consequence,"Thinking of the last incident where someone was publicly called out, punished, or canceled for their statements or actions, would you say the consequence or impact on the person was&"
+offended,"How often, if ever, have you personally been offended by perspectives shared by peers or classmates when in the classroom?"
+ipcsympathy,"From what you know about the situation in the Middle East, do your sympathies lie more with the Israelis or more with the Palestinians?"
+ipccause,"Regardless of your overall feelings toward the Israelis and the Palestinians, who do you think is more responsible for the 2023 outbreak of violence in the Middle East: Israel or Hamas?"
+friends,"Not counting your family, how many close friends do you have?"
+religattend,How often do you attend church or religious services?
+military,Are you currently a member of the armed services?
+veteran,Are you a veteran of the armed services?
+SchoolCount,NA
