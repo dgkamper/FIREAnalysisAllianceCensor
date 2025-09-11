@@ -29,6 +29,8 @@ This analysis is grounded in alliance theory as articulated in Pinsof, Sears, an
 ├── Code
 │   └── R
 ├── Data
+│   ├── 2025
+│   └── 2026
 └── Documents
 ```
 
@@ -36,7 +38,7 @@ This analysis is grounded in alliance theory as articulated in Pinsof, Sears, an
 
 #### R
 
-`FireAnalysis_Final.Rmd` is the primary analysis file containing comprehensive analyses and visualizations for all aspects of the study, including:
+`FireAnalysis_Final2025.Rmd` and `FireAnalysis_Final2026.Rmd` are the primary analysis files containing comprehensive analyses and visualizations for all aspects of the study, including:
 
 - Individual question correlations between self-censorship and protest tolerance
 - Political ideology analysis across all expression measures
@@ -48,7 +50,7 @@ This analysis is grounded in alliance theory as articulated in Pinsof, Sears, an
 
 ### Data
 
-Contains the processed FIRE campus speech survey data with 58,807 student responses across multiple years and institutions.
+Contains the processed FIRE campus speech survey data with 58,807 student responses across 2025 and 2026, states, and institutions.
 
 ### Documents
 
@@ -59,7 +61,7 @@ Contains supplementary materials including:
 
 ### Paper Results
 
-All results are analyzed and visualized in `Code/R/FireAnalysis_Final.Rmd`. All findings are included in the document. The knitted document can be viewed at [`Code/R/FireAnalysis_Final.html`](https://dgkamper.github.io/FIREAnalysisAllianceCensor/Code/R/FireAnalysis_Final.html).
+All results are analyzed and visualized in `Code/R/FireAnalysis_Final2025.Rmd` and `Code/R/FireAnalysis_Final2026.Rmd`. All findings are included in the document. The knitted documents can be viewed at [`Code/R/FireAnalysis_Final2025.html`](https://dgkamper.github.io/FIREAnalysisAllianceCensor/Code/R/FireAnalysis_Final2025.html) and [`Code/R/FireAnalysis_Final2026.html`](https://dgkamper.github.io/FIREAnalysisAllianceCensor/Code/R/FireAnalysis_Final2026.html) .
 
 ## Key Findings
 
@@ -94,7 +96,7 @@ These findings have significant implications for understanding and addressing ca
 
 Analysis was performed in R version 4.2.2.
 
-R package versions are indicated in the knitted analysis file at `Code/R/FireAnalysis_Final.html`.
+R package versions are indicated in the knitted analysis file at `Code/R/FireAnalysis_Final2025.html`.
 
 ## CRediT Author Statement
 
