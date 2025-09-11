@@ -1,6 +1,6 @@
-# Alliance Theory and Campus Free Speech: A Longitudinal Analysis of Self-Censorship and Protest Tolerance Among College Students (2025-2026)
+# Alliance Theory and Campus Free Speech from Self-Censorship and Protest Tolerance Among College Students 
 
-This repository contains materials for the longitudinal analysis "Alliance Theory and Campus Free Speech: An Empirical Analysis of Self-Censorship and Protest Tolerance Among College Students" by David G. Kamper, examining evolving patterns of campus expression through the lens of alliance theory across two critical years in higher education.
+This repository contains materials for the analysis "Alliance Theory and Campus Free Speech from Self-Censorship and Protest Tolerance Among College Students " by David G. Kamper, examining evolving patterns of campus expression through the lens of alliance theory across two critical years in higher education.
 
 ## Introduction
 
@@ -8,7 +8,7 @@ The state of free speech on college campuses has become a defining issue in cont
 
 This research applies alliance theory—as developed by Pinsof, Sears, and Haselton (2023)—to campus free speech dynamics, arguing that political expression patterns are fundamentally shaped by group allegiances rather than consistent principled commitments to free speech values. Alliance theory predicts that individuals will systematically favor allies and oppose rivals across different domains, leading to what appears as principled inconsistency but actually reflects strategic coalition maintenance.
 
-Using comprehensive longitudinal survey data from 342,179 college students collected by the Foundation for Individual Rights in Education (FIRE) across 2025 (58,807 students) and 2026 (284,372 students), this analysis examines several key research questions through temporal comparison to understand how campus speech climates evolve and transform.
+Using comprehensive survey data from 342,179 college students collected by the Foundation for Individual Rights in Education (FIRE) across 2025 (58,807 students) and 2026 (284,372 students), this analysis examines several key research questions through temporal comparison to understand how campus speech climates evolve and transform.
 
 ## Research Questions
 
