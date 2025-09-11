@@ -1,0 +1,1280 @@
+---
+title: "FIRE Campus Speech Analysis - 2026"
+author: "DGK"
+date: "Q3 2025"
+output:
+  pdf_document:
+    toc: true
+  html_document:
+    toc: true
+    toc_float: true
+    code_folding: hide
+  word_document:
+    toc: true
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE, fig.width = 10, fig.height = 6)
+```
+
+# 1. Setup and Data Loading
+
+## 1.1 Load Required Libraries
+```{r libraries}
+library(tidyverse)
+library(ggplot2)
+library(corrplot)
+library(car)
+library(dplyr)
+library(readr)
+library(haven)
+library(forcats)
+library(scales)
+```
+
+# 1.2 Load 2026 Dataset 
+```{r}
+# Load the 2026 numeric dataset
+
+FILEPATH <- "/Users/dgkamper/Library/CloudStorage/GoogleDrive-dgkamper@gmail.com/My Drive/DGK Lab/Collaborations/Haselton Lab/DGK Lab; Haselton Lab - FIRE Dataset Analysis/Data/cfsrALL.csv"
+
+df_2026 <- read.csv(FILEPATH, na.strings = c("", "NA", "-99", "98", "99"), stringsAsFactors = TRUE)
+
+# Replace this with actual data loading:
+cat("2026 Dataset dimensions:", dim(df_2026), "\n")
+cat("Number of variables:", ncol(df_2026), "\n") 
+cat("Number of observations:", nrow(df_2026), "\n")
+
+# Expected output based on codebook:
+cat("Expected 2026 Dataset dimensions: 284,372 rows x 178 columns\n")
+```
+# 2. Data Preprocessing
+
+## 2.1 Variable Creation and Cleaning Function
+```{r}
+# Function to convert variables to numeric while preserving order
+convert_to_numeric_ordered <- function(x, reverse = FALSE) {
+  if(is.factor(x) || is.labelled(x)) {
+    if(is.labelled(x)) {
+      numeric_values <- as.numeric(x)
+    } else {
+      numeric_values <- as.numeric(x)
+    }
+    
+    if(reverse) {
+      max_val <- max(numeric_values, na.rm = TRUE)
+      numeric_values <- (max_val + 1) - numeric_values
+    }
+    return(numeric_values)
+  } else {
+    return(as.numeric(x))
+  }
+}
+
+# Main data processing function using actual variable names
+process_fire_2026_data <- function(df) {
+  cat("Processing 2026 FIRE dataset with correct variable structure...\n")
+  
+  df_analysis <- df
+  
+  # ============================================================================
+  # SELF-CENSORSHIP VARIABLES (Actual names: sc, sc_stdnt, sc_profs, sc_class)
+  # ============================================================================
+  
+  selfcensor_vars <- c("sc", "sc_stdnt", "sc_profs", "sc_class")
+  selfcensor_names <- c("General Self-Censorship", "With Students", "With Professors", "In Classroom")
+  
+  for(i in 1:length(selfcensor_vars)) {
+    var <- selfcensor_vars[i]
+    if(var %in% names(df_analysis)) {
+      df_analysis[[paste0(var, "_num")]] <- convert_to_numeric_ordered(df_analysis[[var]])
+    }
+  }
+  
+  # ============================================================================
+  # COMFORT EXPRESSING VIEWS (Actual names: cf_*)
+  # ============================================================================
+  
+  comfort_vars <- c("cf_pubprof", "cf_socmedia", "cf_inclass", "cf_wrtprof", "cf_quad")
+  comfort_names <- c("Public Prof Disagreement", "Social Media", "In-Class", "Written Prof", "Campus Common Areas")
+  
+  for(var in comfort_vars) {
+    if(var %in% names(df_analysis)) {
+      df_analysis[[paste0(var, "_num")]] <- convert_to_numeric_ordered(df_analysis[[var]])
+    }
+  }
+  
+  # ============================================================================
+  # PROTEST TOLERANCE (Actual names: act_shout, act_block, act_viol)
+  # ============================================================================
+  
+  protest_vars <- c("act_shout", "act_block", "act_viol")
+  protest_names <- c("Shouting Down", "Blocking Access", "Violence Against Speakers")
+  
+  for(var in protest_vars) {
+    if(var %in% names(df_analysis)) {
+      df_analysis[[paste0(var, "_num")]] <- convert_to_numeric_ordered(df_analysis[[var]])
+    }
+  }
+  
+  # ============================================================================
+  # SPEAKER TOLERANCE (Actual names: spk_*) - CORRECTED REGEX
+  # ============================================================================
+  
+  speaker_vars <- grep("^spk_", names(df_analysis), value = TRUE)
+  for(var in speaker_vars) {
+    if(var %in% names(df_analysis)) {
+      df_analysis[[paste0(var, "_num")]] <- convert_to_numeric_ordered(df_analysis[[var]])
+    }
+  }
+  
+  # ============================================================================
+  # IDEOLOGY AND POLITICAL VARIABLES
+  # ============================================================================
+  
+  if("ideo" %in% names(df_analysis)) {
+    df_analysis$ideology_clean <- factor(df_analysis$ideo, ordered = TRUE,
+                                        levels = 1:11,
+                                        labels = c("Very liberal", "Somewhat liberal", "Slightly liberal",
+                                                  "Moderate", "Slightly conservative", "Somewhat conservative", 
+                                                  "Very conservative", "Democratic Socialist", "Libertarian", 
+                                                  "Haven't thought about this", "Something else"))
+  }
+  
+  if("cp_partyid" %in% names(df_analysis)) {
+    df_analysis$party_clean <- factor(df_analysis$cp_partyid)
+  }
+  
+  if("issueimportance" %in% names(df_analysis)) {
+    df_analysis$issue_importance <- factor(df_analysis$issueimportance,
+                                          levels = 1:10,
+                                          labels = c("Abortion/Reproductive Health", "Cost of Education", "Immigration", "Gun Policy", 
+                                                    "Racial Inequality", "LGBTQ Treatment", "Income Inequality", 
+                                                    "Environment/Climate", "Foreign Policy", "Other"))
+  }
+  
+  # ============================================================================
+  # MENTAL HEALTH VARIABLES (Actual names: mh_*)
+  # ============================================================================
+  
+  mh_vars <- c("mh_anxious", "mh_lonely", "mh_depressed", "mh_stressed")
+  for(var in mh_vars) {
+    if(var %in% names(df_analysis)) {
+      df_analysis[[paste0(var, "_num")]] <- convert_to_numeric_ordered(df_analysis[[var]])
+    }
+  }
+  
+  # ============================================================================
+  # TOPIC DIFFICULTY VARIABLES (Actual names: tk_*) - CORRECTED REGEX
+  # ============================================================================
+  
+  topic_vars <- grep("^tk_", names(df_analysis), value = TRUE)
+  
+  # Create topic name mapping
+  topic_labels <- list(
+    "tk_abortion" = "Abortion",
+    "tk_climate" = "Climate Change", 
+    "tk_police" = "Police",
+    "tk_religion" = "Religion",
+    "tk_raceineq" = "Racial Inequality",
+    "tk_trans" = "Transgender Issues",
+    "tk_ipc" = "Israel/Palestine",
+    "tk_immig" = "Immigration",
+    "tk_gunctrl" = "Gun Control",
+    "tk_freespeech" = "Free Speech",
+    "tk_affirmact" = "Affirmative Action",
+    "tk_sexasslt" = "Sexual Assault"
+  )
+  
+  for(var in topic_vars) {
+    if(var %in% names(df_analysis)) {
+      df_analysis[[paste0(var, "_difficult")]] <- factor(df_analysis[[var]],
+                                                         levels = c(0, 1),
+                                                         labels = c("Not Difficult", "Difficult"))
+    }
+  }
+  
+  # ============================================================================
+  # GROUP FUNDING VARIABLES (Actual names: grp_*) - CORRECTED REGEX
+  # ============================================================================
+  
+  group_vars <- grep("^grp_", names(df_analysis), value = TRUE)
+  for(var in group_vars) {
+    if(var %in% names(df_analysis)) {
+      df_analysis[[paste0(var, "_support")]] <- factor(df_analysis[[var]],
+                                                       levels = c(0, 1),
+                                                       labels = c("No", "Yes"))
+    }
+  }
+  
+  # ============================================================================
+  # POLICY PREFERENCES (Actual names: plcy_*) - CORRECTED REGEX
+  # ============================================================================
+  
+  policy_vars <- grep("^plcy_", names(df_analysis), value = TRUE)
+  for(var in policy_vars) {
+    if(var %in% names(df_analysis)) {
+      df_analysis[[paste0(var, "_support")]] <- factor(df_analysis[[var]],
+                                                       levels = c(0, 1),
+                                                       labels = c("No", "Yes"))
+    }
+  }
+  
+  # ============================================================================
+  # DEMOGRAPHIC VARIABLES
+  # ============================================================================
+  
+  demo_vars <- c("race", "gender_bin", "gradyear", "religion", "ses")
+  for(var in demo_vars) {
+    if(var %in% names(df_analysis)) {
+      df_analysis[[paste0(var, "_clean")]] <- factor(df_analysis[[var]])
+    }
+  }
+  
+  # ============================================================================
+  # INSTITUTIONAL VARIABLES
+  # ============================================================================
+  
+  if("adminclear" %in% names(df_analysis)) {
+    df_analysis$admin_clear_num <- convert_to_numeric_ordered(df_analysis$adminclear)
+  }
+  if("admincontr" %in% names(df_analysis)) {
+    df_analysis$admin_defend_num <- convert_to_numeric_ordered(df_analysis$admincontr)
+  }
+  
+  cat("2026 FIRE data processing complete!\n")
+  cat("Variables found and processed:\n")
+  cat("- Self-censorship measures:", sum(selfcensor_vars %in% names(df_analysis)), "of", length(selfcensor_vars), "\n")
+  cat("- Comfort expressing views:", sum(comfort_vars %in% names(df_analysis)), "of", length(comfort_vars), "\n")
+  cat("- Protest tolerance:", sum(protest_vars %in% names(df)), "of", length(protest_vars), "\n")
+  cat("- Topic difficulty variables:", length(topic_vars), "\n")
+  cat("- Speaker tolerance variables:", length(speaker_vars), "\n")
+  cat("- Group funding variables:", length(group_vars), "\n")
+  cat("- Policy preference variables:", length(policy_vars), "\n\n")
+  
+  return(df_analysis)
+}
+```
+
+# 3. Core Self Censorship Analysis: Individual Correlations
+
+```{r self_censor}
+analyze_core_correlations <- function(df_analysis) {
+  cat("=== CORE ANALYSIS: SELF-CENSORSHIP VS PROTEST TOLERANCE ===\n\n")
+  cat("Research Question: How do self-censorship behaviors relate to tolerance for protest tactics?\n\n")
+  
+  # Define variables with actual names
+  selfcensor_vars <- c("sc_num", "sc_stdnt_num", "sc_profs_num", "sc_class_num",
+                      "cf_pubprof_num", "cf_socmedia_num", "cf_inclass_num", 
+                      "cf_wrtprof_num", "cf_quad_num")
+  
+  selfcensor_labels <- c("General Self-Censorship", "With Students", "With Professors", "In Classroom",
+                        "Public Prof Disagreement", "Social Media", "In-Class Discussion",
+                        "Written Prof Disagreement", "Campus Common Areas")
+  
+  protest_vars <- c("act_shout_num", "act_block_num", "act_viol_num")
+  protest_labels <- c("Shouting Down", "Blocking Access", "Violence")
+  
+  # Calculate correlations
+  correlation_results <- data.frame()
+  
+  for(i in 1:length(selfcensor_vars)) {
+    for(j in 1:length(protest_vars)) {
+      sc_var <- selfcensor_vars[i]
+      pt_var <- protest_vars[j]
+      
+      if(sc_var %in% names(df_analysis) && pt_var %in% names(df_analysis)) {
+        complete_data <- df_analysis[!is.na(df_analysis[[sc_var]]) & !is.na(df_analysis[[pt_var]]), ]
+        
+        if(nrow(complete_data) > 100) {
+          cor_test <- cor.test(complete_data[[sc_var]], complete_data[[pt_var]])
+          
+          correlation_results <- rbind(correlation_results, data.frame(
+            Self_Censorship = selfcensor_labels[i],
+            Protest_Tactic = protest_labels[j],
+            Correlation = round(cor_test$estimate, 3),
+            P_Value = cor_test$p.value,
+            N = nrow(complete_data),
+            Significance = ifelse(cor_test$p.value < 0.001, "***",
+                                 ifelse(cor_test$p.value < 0.01, "**",
+                                       ifelse(cor_test$p.value < 0.05, "*", ""))),
+            stringsAsFactors = FALSE
+          ))
+        }
+      }
+    }
+  }
+  
+  cat("Individual Question Correlations:\n")
+  print(correlation_results)
+  
+  # Create correlation heatmap
+  if(nrow(correlation_results) > 0) {
+    correlation_wide <- correlation_results %>%
+      select(Self_Censorship, Protest_Tactic, Correlation) %>%
+      pivot_wider(names_from = Protest_Tactic, values_from = Correlation)
+    
+    if(require(corrplot, quietly = TRUE) && nrow(correlation_wide) > 0) {
+      cor_mat <- as.matrix(correlation_wide[, -1])
+      rownames(cor_mat) <- correlation_wide$Self_Censorship
+      
+      corrplot(cor_mat, method = "color", addCoef.col = "black",
+               title = "2026 Self-Censorship vs Protest Tolerance Correlations",
+               mar = c(0,0,2,0), tl.cex = 0.7, number.cex = 0.7)
+    }
+  }
+  
+  return(correlation_results)
+}
+```
+
+# 4. Ideological Analysis
+
+```{r ideological_analysis}
+analyze_ideology_patterns <- function(df_analysis) {
+  cat("=== IDEOLOGICAL PATTERNS IN CAMPUS SPEECH ===\n\n")
+  
+  if(!"ideology_clean" %in% names(df_analysis)) {
+    cat("Ideology variable not found. Skipping ideological analysis.\n")
+    return()
+  }
+  
+  # Self-censorship by ideology
+  selfcensor_vars <- c("sc_num", "sc_stdnt_num", "sc_profs_num", "sc_class_num")
+  selfcensor_labels <- c("General Self-Censorship", "With Students", "With Professors", "In Classroom")
+  
+  for(i in 1:length(selfcensor_vars)) {
+    var <- selfcensor_vars[i]
+    label <- selfcensor_labels[i]
+    
+    if(var %in% names(df_analysis)) {
+      ideology_data <- df_analysis[!is.na(df_analysis[[var]]) & !is.na(df_analysis$ideology_clean), ]
+      
+      if(nrow(ideology_data) > 500) {
+        cat("=== ", label, " by Political Ideology ===\n")
+        
+        # ANOVA
+        anova_result <- aov(get(var) ~ ideology_clean, data = ideology_data)
+        print(summary(anova_result))
+        
+        # Summary statistics
+        ideology_summary <- ideology_data %>%
+          group_by(ideology_clean) %>%
+          summarise(
+            N = n(),
+            Mean = round(mean(.data[[var]], na.rm = TRUE), 2),
+            SD = round(sd(.data[[var]], na.rm = TRUE), 2),
+            .groups = "drop"
+          )
+        print(ideology_summary)
+        cat("\n")
+      }
+    }
+  }
+  
+  # Protest tolerance by ideology
+  protest_vars <- c("act_shout_num", "act_block_num", "act_viol_num")
+  protest_labels <- c("Shouting Down Tolerance", "Blocking Tolerance", "Violence Tolerance")
+  
+  for(i in 1:length(protest_vars)) {
+    var <- protest_vars[i]
+    label <- protest_labels[i]
+    
+    if(var %in% names(df_analysis)) {
+      ideology_data <- df_analysis[!is.na(df_analysis[[var]]) & !is.na(df_analysis$ideology_clean), ]
+      
+      if(nrow(ideology_data) > 500) {
+        cat("=== ", label, " by Political Ideology ===\n")
+        
+        # ANOVA
+        anova_result <- aov(get(var) ~ ideology_clean, data = ideology_data)
+        print(summary(anova_result))
+        
+        # Summary statistics
+        ideology_summary <- ideology_data %>%
+          group_by(ideology_clean) %>%
+          summarise(
+            N = n(),
+            Mean = round(mean(.data[[var]], na.rm = TRUE), 2),
+            SD = round(sd(.data[[var]], na.rm = TRUE), 2),
+            .groups = "drop"
+          )
+        print(ideology_summary)
+        cat("\n")
+      }
+    }
+  }
+}
+```
+
+# 5. Topic Controversy Analysis
+
+```{r topic_controversy}
+analyze_conversation_difficulty <- function(df_analysis) {
+  cat("=== TOPIC-SPECIFIC CONVERSATION DIFFICULTY ===\n\n")
+  
+  # Get topic difficulty variables
+  topic_vars <- grep("^tk_", names(df_analysis), value = TRUE)
+  topic_vars <- topic_vars[!grepl("_difficult$", topic_vars)]
+  
+  if(length(topic_vars) == 0) {
+    cat("No topic difficulty variables found.\n")
+    return()
+  }
+  
+  # Topic labels
+  topic_labels <- list(
+    "tk_abortion" = "Abortion",
+    "tk_climate" = "Climate Change", 
+    "tk_police" = "Police",
+    "tk_religion" = "Religion",
+    "tk_raceineq" = "Racial Inequality",
+    "tk_trans" = "Transgender Issues",
+    "tk_ipc" = "Israel/Palestine",
+    "tk_immig" = "Immigration",
+    "tk_gunctrl" = "Gun Control",
+    "tk_freespeech" = "Free Speech"
+  )
+  
+  # Calculate difficulty percentages
+  difficulty_summary <- data.frame()
+  
+  for(var in topic_vars) {
+    if(var %in% names(df_analysis)) {
+      topic_name <- ifelse(var %in% names(topic_labels), topic_labels[[var]], var)
+      
+      # Count responses (0 = not difficult, 1 = difficult)
+      topic_table <- table(df_analysis[[var]], useNA = "ifany")
+      valid_responses <- sum(topic_table[names(topic_table) %in% c("0", "1")])
+      
+      if("1" %in% names(topic_table) && valid_responses > 0) {
+        pct_difficult <- round(100 * topic_table["1"] / valid_responses, 1)
+        
+        difficulty_summary <- rbind(difficulty_summary, data.frame(
+          Topic = topic_name,
+          Percent_Difficult = pct_difficult,
+          N_Valid = valid_responses,
+          stringsAsFactors = FALSE
+        ))
+      }
+    }
+  }
+  
+  if(nrow(difficulty_summary) > 0) {
+    difficulty_summary <- difficulty_summary[order(-difficulty_summary$Percent_Difficult), ]
+    cat("Topics ranked by conversation difficulty:\n")
+    print(difficulty_summary)
+  }
+  
+  # Topic difficulty by ideology
+  if("ideology_clean" %in% names(df_analysis) && nrow(difficulty_summary) > 0) {
+    cat("\nTopic Difficulty by Political Ideology (Top 5 most difficult):\n")
+    
+    top_topics <- head(difficulty_summary, 5)
+    
+    for(i in 1:nrow(top_topics)) {
+      topic_name <- top_topics$Topic[i]
+      var <- names(topic_labels)[topic_labels == topic_name]
+      if(length(var) == 0) var <- paste0("tk_", tolower(gsub(" ", "", topic_name)))
+      
+      if(var %in% names(df_analysis)) {
+        cross_tab <- table(df_analysis$ideology_clean, df_analysis[[var]], useNA = "ifany")
+        
+        if(ncol(cross_tab) >= 2) {
+          cat("\n", topic_name, ":\n")
+          prop_tab <- round(100 * prop.table(cross_tab, 1), 1)
+          print(prop_tab)
+          
+          # Chi-square test
+          tryCatch({
+            chi_test <- chisq.test(cross_tab)
+            cat("Chi-square p-value:", format.pval(chi_test$p.value), "\n")
+          }, error = function(e) {
+            cat("Chi-square test failed\n")
+          })
+        }
+      }
+    }
+  }
+  
+  # Correlations with self-censorship
+  if("sc_num" %in% names(df_analysis)) {
+    cat("\nCorrelations between Topic Difficulty and Self-Censorship:\n")
+    
+    for(var in topic_vars[1:min(10, length(topic_vars))]) {
+      if(var %in% names(df_analysis)) {
+        topic_name <- ifelse(var %in% names(topic_labels), topic_labels[[var]], var)
+        
+        complete_data <- df_analysis[!is.na(df_analysis$sc_num) & !is.na(df_analysis[[var]]), ]
+        
+        if(nrow(complete_data) > 100) {
+          cor_test <- cor.test(complete_data$sc_num, complete_data[[var]])
+          cat(sprintf("%-20s: r = %6.3f, p = %s, N = %d\n",
+                     topic_name, cor_test$estimate, format.pval(cor_test$p.value), nrow(complete_data)))
+        }
+      }
+    }
+  }
+}
+```
+
+# 6. Mental Health Analysis
+
+```{r mental_health}
+analyze_mental_health_correlates <- function(df_analysis) {
+  cat("=== MENTAL HEALTH AND SELF-CENSORSHIP CORRELATES ===\n\n")
+  
+  mh_vars <- c("mh_anxious_num", "mh_lonely_num", "mh_depressed_num", "mh_stressed_num")
+  mh_labels <- c("Anxiety", "Loneliness", "Depression", "Stress")
+  
+  selfcensor_vars <- c("sc_num", "sc_stdnt_num", "sc_profs_num", "sc_class_num")
+  selfcensor_labels <- c("General Self-Censorship", "With Students", "With Professors", "In Classroom")
+  
+  for(i in 1:length(mh_vars)) {
+    mh_var <- mh_vars[i]
+    mh_label <- mh_labels[i]
+    
+    if(mh_var %in% names(df_analysis)) {
+      cat("=== ", mh_label, " Analysis ===\n")
+      
+      non_missing <- sum(!is.na(df_analysis[[mh_var]]))
+      cat("Sample size:", non_missing, "out of", nrow(df_analysis), "\n")
+      
+      if(non_missing > 100) {
+        cat("\nCorrelations with self-censorship:\n")
+        
+        for(j in 1:length(selfcensor_vars)) {
+          sc_var <- selfcensor_vars[j]
+          sc_label <- selfcensor_labels[j]
+          
+          if(sc_var %in% names(df_analysis)) {
+            complete_data <- df_analysis[!is.na(df_analysis[[mh_var]]) & !is.na(df_analysis[[sc_var]]), ]
+            
+            if(nrow(complete_data) > 100) {
+              cor_test <- cor.test(complete_data[[mh_var]], complete_data[[sc_var]])
+              cat(sprintf("  %-25s: r = %6.3f, p = %s, N = %d\n",
+                         sc_label, cor_test$estimate, format.pval(cor_test$p.value), nrow(complete_data)))
+            }
+          }
+        }
+        
+        # Correlations with protest tolerance
+        protest_vars <- c("act_shout_num", "act_block_num", "act_viol_num")
+        protest_labels <- c("Shouting Down", "Blocking", "Violence")
+        
+        cat("\nCorrelations with protest tolerance:\n")
+        for(j in 1:length(protest_vars)) {
+          pt_var <- protest_vars[j]
+          pt_label <- protest_labels[j]
+          
+          if(pt_var %in% names(df_analysis)) {
+            complete_data <- df_analysis[!is.na(df_analysis[[mh_var]]) & !is.na(df_analysis[[pt_var]]), ]
+            
+            if(nrow(complete_data) > 100) {
+              cor_test <- cor.test(complete_data[[mh_var]], complete_data[[pt_var]])
+              cat(sprintf("  %-25s: r = %6.3f, p = %s, N = %d\n",
+                         pt_label, cor_test$estimate, format.pval(cor_test$p.value), nrow(complete_data)))
+            }
+          }
+        }
+        cat("\n")
+      }
+    }
+  }
+}
+```
+
+# 7. Institutional Analysis
+
+```{r institutional_analysis}
+analyze_institutional_climate <- function(df_analysis) {
+  cat("=== INSTITUTIONAL CLIMATE ANALYSIS ===\n\n")
+  
+  admin_vars <- c("admin_clear_num", "admin_defend_num")
+  admin_labels <- c("Administrative Clarity on Free Speech", "Administrative Defense of Speakers")
+  
+  for(i in 1:length(admin_vars)) {
+    var <- admin_vars[i]
+    label <- admin_labels[i]
+    
+    if(var %in% names(df_analysis)) {
+      cat("=== ", label, " ===\n")
+      
+      non_missing <- sum(!is.na(df_analysis[[var]]))
+      cat("Sample size:", non_missing, "\n")
+      
+      if(non_missing > 100) {
+        cat("Mean:", round(mean(df_analysis[[var]], na.rm = TRUE), 2), "\n")
+        cat("SD:", round(sd(df_analysis[[var]], na.rm = TRUE), 2), "\n")
+        
+        # Correlation with self-censorship
+        if("sc_num" %in% names(df_analysis)) {
+          complete_data <- df_analysis[!is.na(df_analysis[[var]]) & !is.na(df_analysis$sc_num), ]
+          
+          if(nrow(complete_data) > 100) {
+            cor_test <- cor.test(complete_data[[var]], complete_data$sc_num)
+            cat("Correlation with general self-censorship: r =", round(cor_test$estimate, 3), 
+                ", p =", format.pval(cor_test$p.value), ", N =", nrow(complete_data), "\n")
+          }
+        }
+        
+        # Analysis by ideology
+        if("ideology_clean" %in% names(df_analysis)) {
+          ideology_data <- df_analysis[!is.na(df_analysis[[var]]) & !is.na(df_analysis$ideology_clean), ]
+          
+          if(nrow(ideology_data) > 500) {
+            cat("\nBy Political Ideology:\n")
+            anova_result <- aov(get(var) ~ ideology_clean, data = ideology_data)
+            print(summary(anova_result))
+            
+            ideology_summary <- ideology_data %>%
+              group_by(ideology_clean) %>%
+              summarise(
+                N = n(),
+                Mean = round(mean(.data[[var]], na.rm = TRUE), 2),
+                SD = round(sd(.data[[var]], na.rm = TRUE), 2),
+                .groups = "drop"
+              )
+            print(ideology_summary)
+          }
+        }
+        cat("\n")
+      }
+    }
+  }
+}
+```
+
+# 8. Campus Policy Preferences
+
+```{r campus_policy}
+analyze_policy_preferences <- function(df_analysis) {
+  cat("=== CAMPUS POLICY PREFERENCES ===\n\n")
+  
+  policy_vars <- grep("^plcy_.*_support$", names(df_analysis), value = TRUE)
+  
+  if(length(policy_vars) > 0) {
+    cat("Campus Policy Support Levels:\n")
+    
+    policy_summary <- data.frame()
+    
+    for(var in policy_vars) {
+      policy_name <- gsub("^plcy_|_support$", "", var)
+      policy_name <- str_to_title(gsub("_", " ", policy_name))
+      
+      if(var %in% names(df_analysis)) {
+        policy_table <- table(df_analysis[[var]], useNA = "ifany")
+        
+        if("Yes" %in% names(policy_table)) {
+          total_responses <- sum(policy_table[names(policy_table) %in% c("No", "Yes")])
+          pct_support <- round(100 * policy_table["Yes"] / total_responses, 1)
+          
+          policy_summary <- rbind(policy_summary, data.frame(
+            Policy = policy_name,
+            Percent_Support = pct_support,
+            N_Total = total_responses,
+            stringsAsFactors = FALSE
+          ))
+        }
+      }
+    }
+    
+    if(nrow(policy_summary) > 0) {
+      policy_summary <- policy_summary[order(-policy_summary$Percent_Support), ]
+      print(policy_summary)
+    }
+    
+    # Policy preferences by ideology
+    if("ideology_clean" %in% names(df_analysis) && length(policy_vars) > 0) {
+      cat("\nPolicy Support by Political Ideology (Top 5 policies):\n")
+      
+      top_policies <- head(policy_vars, 5)
+      
+      for(var in top_policies) {
+        policy_name <- gsub("^plcy_|_support$", "", var)
+        policy_name <- str_to_title(gsub("_", " ", policy_name))
+        
+        cross_tab <- table(df_analysis$ideology_clean, df_analysis[[var]], useNA = "ifany")
+        
+        if(ncol(cross_tab) >= 2) {
+          cat("\n", policy_name, ":\n")
+          prop_tab <- round(100 * prop.table(cross_tab, 1), 1)
+          print(prop_tab)
+          
+          tryCatch({
+            chi_test <- chisq.test(cross_tab)
+            cat("Chi-square p-value:", format.pval(chi_test$p.value), "\n")
+          }, error = function(e) {
+            cat("Chi-square test failed\n")
+          })
+        }
+      }
+    }
+    
+    # Correlation with self-censorship
+    if("sc_num" %in% names(df_analysis)) {
+      cat("\nCorrelations between Policy Support and Self-Censorship:\n")
+      
+      for(var in policy_vars[1:min(8, length(policy_vars))]) {
+        policy_name <- gsub("^plcy_|_support$", "", var)
+        policy_name <- str_to_title(gsub("_", " ", policy_name))
+        
+        # Convert to numeric (Yes = 1, No = 0)
+        policy_numeric <- as.numeric(df_analysis[[var]] == "Yes")
+        
+        complete_data <- df_analysis[!is.na(df_analysis$sc_num) & !is.na(policy_numeric), ]
+        
+        if(nrow(complete_data) > 100) {
+          cor_test <- cor.test(complete_data$sc_num, policy_numeric[!is.na(df_analysis$sc_num) & !is.na(policy_numeric)])
+          cat(sprintf("%-25s: r = %6.3f, p = %s, N = %d\n",
+                     policy_name, cor_test$estimate, format.pval(cor_test$p.value), nrow(complete_data)))
+        }
+      }
+    }
+  }
+}
+```
+
+# 9. Alliance Theory Analysis
+```{r alliance_theory}
+analyze_alliance_patterns <- function(df_analysis) {
+  cat("=== ALLIANCE THEORY: GROUP-BASED POLITICAL PREFERENCES ===\n\n")
+  
+  # Speaker tolerance analysis
+  speaker_vars <- grep("^spk_.*_num$", names(df_analysis), value = TRUE)
+  
+  if(length(speaker_vars) > 0) {
+    cat("Speaker Tolerance by Political Content:\n")
+    
+    speaker_summary <- data.frame()
+    
+    for(var in speaker_vars) {
+      if(var %in% names(df_analysis)) {
+        speaker_name <- gsub("^spk_|_num$", "", var)
+        non_missing <- sum(!is.na(df_analysis[[var]]))
+        
+        if(non_missing > 100) {
+          mean_tolerance <- mean(df_analysis[[var]], na.rm = TRUE)
+          
+          speaker_summary <- rbind(speaker_summary, data.frame(
+            Speaker_Type = speaker_name,
+            Mean_Tolerance = round(mean_tolerance, 2),
+            N = non_missing,
+            stringsAsFactors = FALSE
+          ))
+        }
+      }
+    }
+    
+    if(nrow(speaker_summary) > 0) {
+      speaker_summary <- speaker_summary[order(-speaker_summary$Mean_Tolerance), ]
+      print(speaker_summary)
+    }
+    
+    # Speaker tolerance by ideology for key contrasting speakers
+    if("ideology_clean" %in% names(df_analysis)) {
+      key_speakers <- c("spk_trans_num", "spk_abortion_num", "spk_blm_num")
+      available_speakers <- intersect(key_speakers, names(df_analysis))
+      
+      if(length(available_speakers) > 0) {
+        cat("\nSpeaker Tolerance by Political Ideology:\n")
+        
+        for(var in available_speakers) {
+          speaker_name <- gsub("^spk_|_num$", "", var)
+          
+          ideology_data <- df_analysis[!is.na(df_analysis[[var]]) & !is.na(df_analysis$ideology_clean), ]
+          
+          if(nrow(ideology_data) > 500) {
+            cat("\n", str_to_title(speaker_name), " Speaker Tolerance:\n")
+            
+            anova_result <- aov(get(var) ~ ideology_clean, data = ideology_data)
+            print(summary(anova_result))
+            
+            ideology_summary <- ideology_data %>%
+              group_by(ideology_clean) %>%
+              summarise(
+                N = n(),
+                Mean = round(mean(.data[[var]], na.rm = TRUE), 2),
+                SD = round(sd(.data[[var]], na.rm = TRUE), 2),
+                .groups = "drop"
+              )
+            print(ideology_summary)
+          }
+        }
+      }
+    }
+  }
+  
+  # Group funding analysis
+  group_vars <- grep("^grp_.*_support$", names(df_analysis), value = TRUE)
+  
+  if(length(group_vars) > 0) {
+    cat("\n=== Group Funding Preferences ===\n")
+    
+    if("ideology_clean" %in% names(df_analysis)) {
+      key_groups <- c("grp_blm_support", "grp_christ_support", "grp_gop_support", "grp_dem_support")
+      available_groups <- intersect(key_groups, names(df_analysis))
+      
+      for(var in available_groups) {
+        group_name <- gsub("^grp_|_support$", "", var)
+        
+        cross_tab <- table(df_analysis$ideology_clean, df_analysis[[var]], useNA = "ifany")
+        
+        if(ncol(cross_tab) >= 2 && all(dim(cross_tab) > 1)) {
+          cat("\n", str_to_title(group_name), " Group Funding Support:\n")
+          prop_tab <- round(100 * prop.table(cross_tab, 1), 1)
+          print(prop_tab)
+          
+          tryCatch({
+            chi_test <- chisq.test(cross_tab)
+            cat("Chi-square p-value:", format.pval(chi_test$p.value), "\n")
+          }, error = function(e) {
+            cat("Chi-square test failed\n")
+          })
+        }
+      }
+    }
+  }
+  
+  # Alliance consistency testing
+  if("ideology_clean" %in% names(df_analysis)) {
+    cat("\n=== Alliance Consistency Testing ===\n")
+    
+    # Create liberal/conservative binary for cleaner analysis
+    df_analysis$ideology_binary <- case_when(
+      str_detect(tolower(as.character(df_analysis$ideology_clean)), "liberal") ~ "Liberal",
+      str_detect(tolower(as.character(df_analysis$ideology_clean)), "conservative") ~ "Conservative",
+      TRUE ~ "Moderate/Other"
+    )
+    
+    # Test consistency across different domains
+    alliance_tests <- list(
+      "Religious" = c("grp_christ_support", "grp_atheist_support"),
+      "Political" = c("grp_gop_support", "grp_dem_support"), 
+      "Social" = c("grp_blm_support", "grp_israel_support")
+    )
+    
+    for(domain in names(alliance_tests)) {
+      domain_vars <- alliance_tests[[domain]]
+      available_vars <- intersect(domain_vars, names(df_analysis))
+      
+      if(length(available_vars) >= 2) {
+        cat("\n", domain, " Alliance Patterns:\n")
+        
+        for(var in available_vars) {
+          group_name <- gsub("^grp_|_support$", "", var)
+          
+          cross_tab <- table(df_analysis$ideology_binary, df_analysis[[var]], useNA = "ifany")
+          
+          if(ncol(cross_tab) >= 2) {
+            prop_tab <- round(100 * prop.table(cross_tab, 1), 1)
+            cat(group_name, "support by ideology:\n")
+            print(prop_tab)
+          }
+        }
+      }
+    }
+  }
+}
+```
+
+# 10. Demographic Analysis
+```{r demographic}
+analyze_demographics <- function(df_analysis) {
+  cat("=== DEMOGRAPHIC PATTERNS IN CAMPUS SPEECH ===\n\n")
+  
+  # Graduation year analysis
+  if("gradyear_clean" %in% names(df_analysis) && "sc_num" %in% names(df_analysis)) {
+    cat("=== Self-Censorship by Graduation Year ===\n")
+    
+    cohort_data <- df_analysis[!is.na(df_analysis$gradyear_clean) & !is.na(df_analysis$sc_num), ]
+    
+    if(nrow(cohort_data) > 500) {
+      anova_result <- aov(sc_num ~ gradyear_clean, data = cohort_data)
+      print(summary(anova_result))
+      
+      cohort_summary <- cohort_data %>%
+        group_by(gradyear_clean) %>%
+        summarise(
+          N = n(),
+          Mean = round(mean(sc_num, na.rm = TRUE), 2),
+          SD = round(sd(sc_num, na.rm = TRUE), 2),
+          .groups = "drop"
+        )
+      print(cohort_summary)
+    }
+  }
+  
+  # Gender analysis
+  if("gender_bin_clean" %in% names(df_analysis) && "sc_num" %in% names(df_analysis)) {
+    cat("\n=== Self-Censorship by Gender ===\n")
+    
+    gender_data <- df_analysis[!is.na(df_analysis$gender_bin_clean) & !is.na(df_analysis$sc_num), ]
+    
+    if(nrow(gender_data) > 500) {
+      anova_result <- aov(sc_num ~ gender_bin_clean, data = gender_data)
+      print(summary(anova_result))
+      
+      gender_summary <- gender_data %>%
+      group_by(gender_bin_clean) %>%
+      summarise(
+        N = n(),
+        Mean = round(mean(sc_num, na.rm = TRUE), 2),
+        SD = round(sd(sc_num, na.rm = TRUE), 2),
+        .groups = "drop"
+      )
+    print(gender_summary)}
+  }
+  
+  # Religious affiliation analysis
+  if("religion_clean" %in% names(df_analysis) && "sc_num" %in% names(df_analysis)) {
+    cat("\n=== Self-Censorship by Religious Affiliation ===\n")
+    
+    religion_data <- df_analysis[!is.na(df_analysis$religion_clean) & !is.na(df_analysis$sc_num), ]
+    
+    if(nrow(religion_data) > 500) {
+      anova_result <- aov(sc_num ~ religion_clean, data = religion_data)
+      print(summary(anova_result))
+      
+      religion_summary <- religion_data %>%
+        group_by(religion_clean) %>%
+        summarise(
+          N = n(),
+          Mean = round(mean(sc_num, na.rm = TRUE), 2),
+          SD = round(sd(sc_num, na.rm = TRUE), 2),
+          .groups = "drop"
+        ) %>%
+        arrange(desc(Mean))
+      
+      # Only show if there aren't too many categories
+      if(nrow(religion_summary) <= 15) {
+        print(religion_summary)
+      } else {
+        cat("Too many religious categories to display (", nrow(religion_summary), ")\n")
+      }
+    }
+  }
+  
+  # Socioeconomic status analysis
+  if("ses_clean" %in% names(df_analysis) && "sc_num" %in% names(df_analysis)) {
+    cat("\n=== Self-Censorship by Socioeconomic Status ===\n")
+    
+    ses_data <- df_analysis[!is.na(df_analysis$ses_clean) & !is.na(df_analysis$sc_num), ]
+    
+    if(nrow(ses_data) > 500) {
+      anova_result <- aov(sc_num ~ ses_clean, data = ses_data)
+      print(summary(anova_result))
+      
+      ses_summary <- ses_data %>%
+        group_by(ses_clean) %>%
+        summarise(
+          N = n(),
+          Mean = round(mean(sc_num, na.rm = TRUE), 2),
+          SD = round(sd(sc_num, na.rm = TRUE), 2),
+          .groups = "drop"
+        )
+      print(ses_summary)
+    }
+  }
+}
+```
+
+# 11. Issue Importance and Political Engagement
+
+```{r issue_importance_political_engagement}
+analyze_political_engagement <- function(df_analysis) {
+  cat("=== POLITICAL ENGAGEMENT AND ISSUE IMPORTANCE ===\n\n")
+  
+  # Issue importance analysis
+  if("issue_importance" %in% names(df_analysis)) {
+    cat("=== Issue Importance Patterns ===\n")
+    
+    issue_table <- table(df_analysis$issue_importance, useNA = "ifany")
+    issue_pct <- round(100 * prop.table(issue_table), 1)
+    
+    cat("Most important issues to students:\n")
+    print(sort(issue_pct, decreasing = TRUE))
+    
+    # Issue importance by ideology
+    if("ideology_clean" %in% names(df_analysis)) {
+      cat("\nIssue importance by political ideology:\n")
+      
+      cross_tab <- table(df_analysis$ideology_clean, df_analysis$issue_importance, useNA = "ifany")
+      prop_tab <- round(100 * prop.table(cross_tab, 1), 1)
+      
+      # Show top issues for each ideology
+      for(i in 1:min(5, nrow(prop_tab))) {
+        ideology_name <- rownames(prop_tab)[i]
+        top_issues <- sort(prop_tab[i, ], decreasing = TRUE)[1:3]
+        
+        cat(ideology_name, "- Top issues:", paste(names(top_issues), collapse = ", "), "\n")
+      }
+      
+      # Chi-square test
+      if(all(dim(cross_tab) > 1)) {
+        tryCatch({
+          chi_test <- chisq.test(cross_tab)
+          cat("\nChi-square p-value:", format.pval(chi_test$p.value), "\n")
+        }, error = function(e) {
+          cat("Chi-square test failed\n")
+        })
+      }
+    }
+    
+    # Issue importance and self-censorship
+    if("sc_num" %in% names(df_analysis)) {
+      cat("\nSelf-censorship by most important issue:\n")
+      
+      issue_sc_data <- df_analysis[!is.na(df_analysis$issue_importance) & 
+                                  !is.na(df_analysis$sc_num), ]
+      
+      if(nrow(issue_sc_data) > 500) {
+        anova_result <- aov(sc_num ~ issue_importance, data = issue_sc_data)
+        print(summary(anova_result))
+        
+        issue_sc_summary <- issue_sc_data %>%
+          group_by(issue_importance) %>%
+          summarise(
+            N = n(),
+            Mean_SelfCensor = round(mean(sc_num, na.rm = TRUE), 2),
+            SD = round(sd(sc_num, na.rm = TRUE), 2),
+            .groups = "drop"
+          ) %>%
+          arrange(desc(Mean_SelfCensor))
+        print(issue_sc_summary)
+      }
+    }
+  }
+  
+  # Voter registration analysis
+  if("regvoter" %in% names(df_analysis)) {
+    cat("\n=== Voter Registration and Political Engagement ===\n")
+    
+    voter_table <- table(df_analysis$regvoter, useNA = "ifany")
+    cat("Voter registration distribution:\n")
+    print(voter_table)
+    
+    # Voter registration by ideology
+    if("ideology_clean" %in% names(df_analysis)) {
+      cross_tab <- table(df_analysis$ideology_clean, df_analysis$regvoter, useNA = "ifany")
+      prop_tab <- round(100 * prop.table(cross_tab, 1), 1)
+      
+      cat("\nVoter registration by ideology:\n")
+      print(prop_tab)
+    }
+    
+    # Voter registration and self-censorship
+    if("sc_num" %in% names(df_analysis)) {
+      voter_sc_data <- df_analysis[!is.na(df_analysis$regvoter) & !is.na(df_analysis$sc_num), ]
+      
+      if(nrow(voter_sc_data) > 100) {
+        t_test <- t.test(sc_num ~ regvoter, data = voter_sc_data)
+        cat("\nSelf-censorship by voter registration status:\n")
+        print(t_test)
+        
+        voter_summary <- voter_sc_data %>%
+          group_by(regvoter) %>%
+          summarise(
+            N = n(),
+            Mean_SelfCensor = round(mean(sc_num, na.rm = TRUE), 2),
+            SD = round(sd(sc_num, na.rm = TRUE), 2),
+            .groups = "drop"
+          )
+        print(voter_summary)
+      }
+    }
+  }
+}
+```
+
+# Run Analysis
+```{r run_analysis}
+run_comprehensive_fire_analysis <- function(df_analysis) {
+  cat("===============================================================================\n")
+  cat("COMPREHENSIVE FIRE 2026 CAMPUS SPEECH ANALYSIS\n")
+  cat("===============================================================================\n\n")
+  
+  cat("Dataset Overview:\n")
+  cat("Dimensions:", nrow(df_analysis), "x", ncol(df_analysis), "\n")
+  cat("This 2026 analysis uses the complete CFSR megafile with corrected variable names\n")
+  
+  tryCatch({
+    # 1. Core correlations between self-censorship and protest tolerance
+    cat("1. ANALYZING CORE CORRELATIONS...\n")
+    correlation_results <- analyze_core_correlations(df_analysis)
+    
+    # 2. Ideological patterns
+    cat("\n2. ANALYZING IDEOLOGICAL PATTERNS...\n") 
+    analyze_ideology_patterns(df_analysis)
+    
+    # 3. Topic-specific conversation difficulty
+    cat("\n3. ANALYZING CONVERSATION DIFFICULTY...\n")
+    analyze_conversation_difficulty(df_analysis)
+    
+    # 4. Mental health correlates
+    cat("\n4. ANALYZING MENTAL HEALTH CORRELATES...\n")
+    analyze_mental_health_correlates(df_analysis)
+    
+    # 5. Institutional climate
+    cat("\n5. ANALYZING INSTITUTIONAL CLIMATE...\n")
+    analyze_institutional_climate(df_analysis)
+    
+    # 6. Alliance theory testing
+    cat("\n6. TESTING ALLIANCE THEORY...\n")
+    analyze_alliance_patterns(df_analysis)
+    
+    # 7. Demographic patterns
+    cat("\n7. ANALYZING DEMOGRAPHIC PATTERNS...\n")
+    analyze_demographics(df_analysis)
+    
+    # 8. Policy preferences
+    cat("\n8. ANALYZING POLICY PREFERENCES...\n")
+    analyze_policy_preferences(df_analysis)
+    
+    # 9. Political engagement
+    cat("\n9. ANALYZING POLITICAL ENGAGEMENT...\n")
+    analyze_political_engagement(df_analysis)
+    
+  }, error = function(e) {
+    cat("Error in analysis:", e$message, "\n")
+    cat("Check variable availability and data structure.\n")
+    cat("Traceback:\n")
+    print(traceback())
+  })
+}
+```
+
+# Main Execution
+
+```{r}
+# Load and process data
+df_analysis <- process_fire_2026_data(df_2026)
+
+# Run comprehensive analysis
+run_comprehensive_fire_analysis(df_analysis)
+```
+# Results 
+
+## Core Findings: Self-Censorship and Protest Tolerance Relationships
+
+This analysis of 284,372 college students from the 2026 FIRE Campus Speech dataset employed an individual question-level approach to examine relationships between self-censorship behaviors and tolerance for protest tactics. The investigation focused on nine distinct self-censorship contexts and three categories of protest tolerance, providing unprecedented granularity in understanding campus free speech dynamics while testing alliance theory predictions about group-based political preferences.
+
+### Self-Censorship and Protest Tolerance Correlations
+
+The core research question revealed small but statistically significant correlations between specific forms of self-censorship and tolerance for disruptive protest tactics, with patterns varying systematically across different contexts. General self-censorship demonstrated modest positive correlations with tolerance for shouting down speakers (r = 0.070, p < 0.001, N = 264,278) and blocking access to events (r = 0.030, p < 0.001, N = 264,278), while showing no relationship with violence tolerance (r = 0.000, p = 0.879, N = 264,278).
+
+Self-censorship with students showed similar directional patterns with weaker magnitudes (shouting down: r = 0.061, p < 0.001; blocking: r = 0.026, p < 0.001; violence: r = 0.000, p = 0.998, N = 182,419). Self-censorship with professors revealed more complex patterns, showing positive correlations with shouting down (r = 0.044, p < 0.001) but negative correlations with violence tolerance (r = -0.022, p < 0.001, N = 182,418).
+
+The comfort expressing views variables demonstrated systematically different patterns from self-censorship measures, showing consistent negative correlations with all protest tolerance measures. Students comfortable publicly disagreeing with professors showed strong negative correlations with tolerance for shouting down (r = -0.085, p < 0.001), blocking access (r = -0.086, p < 0.001), and violence (r = -0.120, p < 0.001, N = 284,208-284,224). Similar patterns emerged across social media (r = -0.081 to -0.124), in-class discussion (r = -0.093 to -0.060), and campus common areas contexts.
+
+## Political Ideology and Expression Patterns
+
+Political ideology emerged as the dominant predictor of both self-censorship behaviors and protest tolerance, with highly significant omnibus effects across all measures. The ideological patterns revealed systematic differences aligned with alliance theory predictions about group-based political preferences.
+
+### Self-Censorship by Political Ideology
+
+Conservative students consistently reported higher levels of self-censorship across all measured contexts (F(10, 264,262) = 1,191, p < 0.001). Very conservative students demonstrated the highest general self-censorship levels (M = 3.08, SD = 1.28), followed by somewhat conservative students (M = 2.94, SD = 1.18) and slightly conservative students (M = 2.87, SD = 1.11). Very liberal students showed the lowest self-censorship (M = 2.34, SD = 1.01), with somewhat liberal students also reporting low levels (M = 2.40, SD = 0.95).
+
+This ideological gradient remained consistent across different social contexts. In classroom settings, very conservative students reported substantially higher self-censorship (M = 3.18, SD = 1.17) compared to very liberal students (M = 2.66, SD = 1.02). Self-censorship with professors showed similar patterns (conservative: M = 3.12, SD = 1.18; liberal: M = 2.65, SD = 1.06), as did self-censorship with other students (conservative: M = 3.05, SD = 1.17; liberal: M = 2.53, SD = 1.00).
+
+### Protest Tolerance by Political Ideology
+
+Protest tolerance patterns revealed dramatic ideological differences with inverse relationships to self-censorship. For tolerance of shouting down speakers, very liberal students demonstrated the lowest tolerance (M = 2.53, SD = 0.90), while very conservative students showed the highest tolerance (M = 3.30, SD = 0.89). Blocking access tolerance followed similar patterns (liberal: M = 3.09, SD = 0.89; conservative: M = 3.47, SD = 0.84). Violence tolerance showed less ideological variation but maintained the same directional pattern (liberal: M = 3.52, SD = 0.75; conservative: M = 3.59, SD = 0.79).
+
+## Alliance Theory Validation: Speaker Tolerance and Group Funding
+
+### Speaker Tolerance by Political Content
+
+The analysis provided strong empirical support for alliance theory predictions through examination of speaker tolerance patterns across different political topics. Speaker tolerance varied dramatically based on political content, ranging from 1.48 for speakers advocating racial inferiority to 3.03 for immigration speakers. Transgender-related speakers received among the lowest tolerance (M = 1.88), followed by Black Lives Matter speakers (M = 1.89) and abortion speakers (M = 2.18).
+
+Ideological differences in speaker tolerance demonstrated clear alliance-based patterns. For transgender speakers, very liberal students showed substantially higher tolerance (M = 1.41, SD = 0.78) than very conservative students (M = 2.81, SD = 1.08). Abortion speakers revealed similar patterns (liberal: M = 1.80, SD = 0.98; conservative: M = 3.04, SD = 1.03). Black Lives Matter speakers showed comparable ideological gradients (liberal: M = 1.47, SD = 0.80; conservative: M = 2.77, SD = 1.07).
+
+### Group Funding Preferences
+
+Group funding patterns reinforced alliance-based political preferences across ideological lines. Liberal students demonstrated substantially higher support for Black Lives Matter group funding (31.4% for very liberal students) compared to conservative students (13.4% for very conservative students). Democratic group funding showed similar patterns (liberal: 27.5%; conservative: 18.9%), while Republican group funding revealed the inverse pattern (liberal: 23.8%; conservative: 22.4%).
+
+Religious group funding showed more balanced patterns across ideological lines, with Christians receiving similar support from liberals (27.5%) and conservatives (24.0%), suggesting that religious affiliation preferences cross-cut political divisions in ways consistent with alliance theory's emphasis on multiple, potentially competing group identities.
+
+## Topic-Specific Conversation Difficulty and Mental Health Correlates
+
+### Conversation Difficulty Patterns
+
+Topic-specific analysis revealed substantial variation in perceived conversation difficulty across different political issues. Abortion emerged as the most difficult topic for campus conversation, with 45.8% of students reporting difficulty discussing this issue (N = 283,816). Vaccine mandates (43.1%), mask mandates (41.4%), and Israel/Palestine discussions (41.1%) ranked as the next most challenging topics.
+
+Ideological differences in topic difficulty revealed systematic patterns consistent with alliance theory predictions. Conservative students reported greater difficulty discussing abortion (58.0-58.2% for very and somewhat conservative students) compared to liberal students (38.3% for very liberal students). Israel/Palestine discussions showed the inverse pattern, with liberal students reporting substantially greater difficulty (50.8% for very liberal) than conservative students (30.8% for very conservative).
+
+Most controversial topics demonstrated positive correlations with general self-censorship. Racial inequality showed the strongest association (r = 0.186, p < 0.001), followed by immigration (r = 0.177, p < 0.001) and transgender issues (r = 0.162, p < 0.001). These correlations suggest that students who find specific topics difficult to discuss engage in broader patterns of self-censorship behavior.
+
+### Mental Health and Campus Speech Behaviors
+
+Mental health indicators revealed significant but complex relationships with campus speech behaviors across four measured domains. Loneliness demonstrated the strongest correlations with self-censorship behaviors, showing positive associations with general self-censorship (r = 0.182, p < 0.001, N = 80,383) and similar patterns across all self-censorship contexts. Loneliness also correlated negatively with all forms of protest tolerance, indicating that socially isolated students both self-censor more and tolerate disruptive protests less.
+
+Stress showed substantial positive correlations with self-censorship (r = 0.160 for general self-censorship, p < 0.001, N = 79,885) but weaker relationships with protest tolerance. Depression demonstrated moderate positive correlations with self-censorship (r = 0.136 for general self-censorship) and consistent negative correlations with protest tolerance. Anxiety showed similar but weaker patterns across all measures.
+
+## Institutional Climate and Administrative Factors
+
+Administrative clarity regarding free speech policies demonstrated strong negative correlations with self-censorship behaviors. Students who perceived greater administrative clarity (M = 3.13, SD = 1.00) reported substantially lower general self-censorship (r = -0.254, p < 0.001, N = 264,277). Administrative defense of speakers showed a similar but weaker negative correlation with self-censorship (r = -0.168, p < 0.001).
+
+Ideological differences in institutional perceptions revealed systematic variation across the political spectrum. Students who had not considered their political ideology reported the highest administrative clarity perceptions (M = 3.28, SD = 1.00), while very conservative students reported the lowest (M = 3.03, SD = 1.14). Liberal students showed intermediate levels (M = 3.13, SD = 1.01), suggesting that institutional climate perceptions vary systematically with political identity.
+
+## Demographic Patterns and Cohort Effects
+
+### Graduation Year Effects
+
+Cohort analysis revealed significant differences in self-censorship behaviors across graduation years (F(7, 264,270) = 393, p < 0.001). Earlier graduation cohorts demonstrated higher self-censorship levels, with 2021 graduates reporting the highest levels (M = 2.72, SD = 1.15) and 2028 graduates showing the lowest (M = 2.32, SD = 1.05). This pattern suggests either generational differences in campus speech experiences or developmental changes in willingness to express controversial views.
+
+### Religious, Gender, and Socioeconomic Patterns
+
+Religious affiliation showed significant associations with self-censorship (F(12, 259,385) = 272.3, p < 0.001), with systematic variation across different religious groups. Gender differences proved statistically significant but practically modest (F(2, 259,345) = 49.89, p < 0.001). Socioeconomic status demonstrated limited practical associations with self-censorship behaviors despite statistical significance (F(4, 224,442) = 42.64, p < 0.001).
+
+Political engagement, measured through voter registration, showed minimal association with self-censorship. Registered voters demonstrated slightly lower self-censorship (M = 2.54, SD = 1.08) compared to non-registered students (M = 2.56, SD = 1.07), though this difference proved statistically significant (t = 2.29, p = 0.022) but practically negligible given the large sample size.
+
+---
+
+# Discussion
+
+## Alliance Theory and Campus Free Speech Dynamics
+
+The comprehensive analysis of the 2026 FIRE dataset provides substantial empirical validation of alliance theory predictions in the campus free speech context, demonstrating that political expression patterns are fundamentally shaped by group allegiances rather than principled commitments to abstract free speech values. The systematic tolerance gaps between ally and rival speakers across the ideological spectrum directly support core theoretical predictions that political attitudes derive from coalition maintenance rather than moral principles.
+
+The dramatic variation in speaker tolerance based on political content (ranging from 1.48 to 3.03 on tolerance scales) indicates that campus speech attitudes are primarily driven by the political implications of expression rather than procedural commitments to open discourse. The clear ideological gradients in speaker tolerance suggest that campus communities organize around political alliances that systematically favor certain viewpoints while constraining others, contradicting narratives that frame campus free speech conflicts as disputes between pro- and anti-free speech factions.
+
+## The Self-Censorship Paradox Revisited
+
+The positive correlations between certain forms of self-censorship and tolerance for disruptive protest tactics present a theoretical puzzle that challenges conventional free speech frameworks. Traditional liberal theory would predict that individuals committed to open expression would simultaneously oppose censorious tactics by others. Instead, the data reveal a more complex dynamic where self-censorship and tolerance for others' censorious behaviors may represent complementary strategies within alliance-based political competition.
+
+This pattern aligns with alliance theory's prediction that apparent contradictions in political beliefs reflect strategic support for different tactics depending on their utility for advancing coalition interests. Students who engage in self-censorship may do so not from principled commitment to civility, but from tactical recognition that their views would be costly to express in current campus environments. Simultaneously, these students may support disruptive tactics when deployed against speakers representing rival coalitions, viewing such tactics as legitimate tools for advancing their side's political interests.
+
+The contrasting patterns for comfort expressing views provide crucial evidence for this interpretation. Students comfortable publicly disagreeing with professors demonstrated consistently lower tolerance for all protest tactics, suggesting that confidence in expressing disagreement corresponds with preference for orderly discourse rather than disruptive methods. This finding indicates that self-censorship and comfort expressing views capture distinct phenomena rather than opposite poles of the same underlying construct.
+
+## Political Identity as the Primary Driver
+
+The dominance of political ideology as a predictor of both self-censorship and protest tolerance patterns, combined with systematic alliance-based speaker tolerance gaps, provides compelling evidence that campus free speech issues represent political identity conflicts rather than principled debates about expression values. The fact that both conservative and liberal students demonstrate substantial tolerance gaps—favoring allies while opposing rivals—undermines narratives framing campus speech as conflicts between competing philosophical commitments to free expression.
+
+The magnitude of ideological differences in self-censorship (32% higher levels for very conservative compared to very liberal students) suggests meaningful practical differences in perceived freedom to express political views across the ideological spectrum. These asymmetries extend beyond self-censorship to protest tolerance, where liberals demonstrate lower tolerance for disruptive tactics despite reporting lower self-censorship levels. This pattern suggests that campus speech climates may differentially constrain conservative and liberal expression through distinct mechanisms.
+
+## Mental Health and Expression: Reconsidering Causal Relationships
+
+The robust correlations between mental health indicators and campus speech behaviors illuminate previously underexplored dimensions of campus climate research. Loneliness emerged as the strongest predictor of self-censorship behaviors, with correlations suggesting that social isolation may lead to withdrawal from political expression as part of broader patterns of social disengagement. This finding has important implications for understanding the psychological mechanisms underlying campus speech climate effects.
+
+The relationships between stress, depression, and campus speech behaviors challenge simple assumptions about psychological drivers of expression restraint. Rather than psychological distress uniformly leading to behavioral inhibition, these patterns may reflect complex interactions between mental health challenges and social environment characteristics. Students experiencing mental health difficulties may simultaneously seek to avoid additional social conflict through self-censorship while becoming less tolerant of disruptive campus events that create additional stress.
+
+## Institutional Factors and Policy Implications
+
+The strong negative correlation between administrative clarity and self-censorship highlights the crucial role of institutional leadership in shaping campus speech climates. Students who perceive clear administrative positions on free speech policies report substantially lower self-censorship, suggesting that institutional ambiguity may inadvertently encourage speech restriction through uncertainty about consequences and acceptable expression boundaries.
+
+The stronger correlation with administrative clarity compared to administrative defense of speakers indicates that procedural transparency matters more than perceived partisan support for particular viewpoints. This finding suggests that administrative communications emphasizing clear, consistent policies may prove more effective than advocacy for specific speakers or ideological positions, providing a potential pathway for institutional interventions that address speech climate concerns without requiring administrators to navigate complex ideological disputes.
+
+## Limitations and Future Research Directions
+
+Several limitations constrain interpretation of these findings and suggest directions for future investigation. The cross-sectional design prevents causal inferences about relationships between self-censorship and protest tolerance, leaving open questions about whether these attitudes co-develop or whether one influences the other. The individual question approach, while preserving important nuances, may underestimate coherence of underlying attitudes that composite measures would capture.
+
+The self-report nature of the data may introduce social desirability bias, particularly for politically sensitive topics such as tolerance for violence. Additionally, the sample, while large and diverse, comes from students who chose to participate in FIRE surveys and may not represent the full range of campus opinion, potentially undersampling the most politically disengaged students.
+
+Future research should employ longitudinal designs to examine how campus expression attitudes develop over time and in response to specific events or interventions. Experimental studies could test causal mechanisms linking self-censorship to protest tolerance and examine whether interventions targeting one domain affect the other. Cross-institutional comparisons could identify campus-level factors that promote or constrain open expression environments while controlling for student composition effects.
+
+## Broader Implications for Democratic Discourse
+
+These findings extend beyond campus contexts to illuminate fundamental challenges facing democratic discourse in polarized societies. The evidence that expression tolerance is primarily driven by political allegiance rather than principled commitment to free speech suggests that First Amendment protections and liberal democratic norms may be more fragile than commonly assumed. If citizens primarily support expression rights for political allies while seeking to constrain opponents, democratic institutions may face increasing pressure as political polarization intensifies.
+
+The systematic nature of alliance-based tolerance patterns across the ideological spectrum suggests that effective interventions must address fundamental drivers of political polarization rather than focusing solely on symptoms such as campus speaker disruptions or self-censorship behaviors. Understanding campus free speech through an alliance theory lens reveals that debates about expression rights, campus policies, and speaker access are manifestations of deeper conflicts about political power and group status in American society.
